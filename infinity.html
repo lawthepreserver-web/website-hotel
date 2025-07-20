@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hilbert’s Hotel — n+1, Supernova & Uncountable</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Apple-style, minimal, modern font -->
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%; width: 100vw;
+      background: #0e0e12;
+      color: #fff;
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #0e0e12;
+      position: relative;
+    }
+    /* Blackhole: Centered, glowy, only black/white/gray */
+    .blackhole-bg {
+      position: fixed;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      filter: blur(4px) grayscale(0.55);
+      opacity: 0.19;
+      mix-blend-mode: lighten;
+      animation: bhpulse 6s ease-in-out infinite alternate;
+    }
+    .blackhole-center {
+      width: 46vmin;
+      height: 46vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 60% 50%, #fff 0%, #f9f9fa 16%, #292a33 67%, #101014 92%, #000 100%);
+      box-shadow: 0 0 120px 60px #fff, 0 0 160px 80px #fff, 0 0 200px 90px #fff;
+      position: relative;
+      z-index: 0;
+      filter: blur(2px) brightness(1.09);
+      animation: bhspin 16s linear infinite;
+    }
+    .blackhole-ring {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 72vmin; height: 72vmin;
+      transform: translate(-50%,-50%);
+      border-radius: 50%;
+      border: 3.5vmin solid #fff;
+      opacity: 0.13;
+      box-shadow: 0 0 98px 17px #fff, 0 0 48px 22px #fff;
+    }
+    .blackhole-glow {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 120vmin; height: 120vmin;
+      transform: translate(-50%,-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0 7%, #d6d6d6 15%, #111 80%, #000 100%);
+      opacity: 0.08;
+      filter: blur(12px);
+    }
+    @keyframes bhspin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(-360deg);}
+    }
+    @keyframes bhpulse {
+      0% { opacity: 0.12;}
+      100% { opacity: 0.21;}
+    }
+    /* Container/UI */
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      text-align: center;
+      margin-top: 5vh;
+      margin-bottom: 2vh;
+      user-select: none;
+      width: 100%;
+    }
+    .title {
+      font-size: clamp(2.3em, 7vw, 5.2em);
+      font-weight: 700;
+      background: linear-gradient(90deg, #fff 10%, #bababa 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text; text-fill-color: transparent;
+      text-shadow: 0 2px 34px #ffffff3b;
+      margin-bottom: 0.09em;
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      color: #fff;
+      font-size: 1.26em;
+      margin-bottom: 1.1em;
+      letter-spacing: 0.07em;
+      font-weight: 500;
+      opacity: 0.87;
+    }
+    .level-tabs {
+      display: flex; gap: 16px; margin-bottom: 2.3em; justify-content: center;
+      background: rgba(255,255,255,0.01);
+      border-radius: 16px;
+      padding: 0.23em 0.15em;
+      box-shadow: 0 2px 14px #fff1;
+    }
+    .level-tab {
+      border: none;
+      background: #18181e;
+      color: #fff; font-size: 1.11em; font-family: inherit; font-weight: 700;
+      letter-spacing: .09em; padding: 13px 32px; border-radius: 16px;
+      cursor: pointer; outline: none; transition: background .23s, color .17s, box-shadow .17s;
+      box-shadow: 0 0 0 transparent; opacity: .91;
+      font-family: inherit;
+      border: 1.5px solid #23242b;
+      margin-bottom: 0;
+    }
+    .level-tab.active, .level-tab:hover {
+      color: #000;
+      background: linear-gradient(90deg,#fff 30%,#e0e0e0 100%);
+      box-shadow: 0 3px 38px #fff3, 0 2px 14px #eee2;
+      border-color: #fff;
+      opacity: 1;
+    }
+    .story {
+      margin: 0 auto 2.2em auto;
+      max-width: 650px;
+      text-align: center;
+      font-size: 1.15em;
+      color: #e6e6e6;
+      opacity: 0.91;
+      letter-spacing: .01em;
+      line-height: 1.54;
+      background: rgba(255,255,255,0.03);
+      border-radius: 14px;
+      padding: 18px 24px;
+      box-shadow: 0 2px 17px #fff2;
+      transition: background 0.8s;
+      user-select: none;
+      min-height: 56px;
+      font-weight: 400;
+    }
+    .controls {
+      display: flex; gap: 22px; margin-bottom: 2.1em;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .btn {
+      background: #fff;
+      color: #18181c;
+      font-family: inherit;
+      font-size: 1.10em;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 44px;
+      letter-spacing: 0.09em;
+      box-shadow: 0 2px 18px #fff2;
+      cursor: pointer;
+      transition: background 0.19s, color 0.12s, box-shadow .14s;
+      outline: none;
+      border-bottom: 2.5px solid #eaeaea;
+      min-width: 148px;
+      margin-bottom: 8px;
+      user-select: none;
+      opacity: 0.98;
+    }
+    .btn:hover, .btn:focus {
+      background: #23242b;
+      color: #fff;
+      box-shadow: 0 4px 28px #fff5, 0 2px 11px #eee1;
+    }
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+      gap: 16px;
+      margin: 0 auto 3.1em auto;
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+      z-index: 2;
+      min-height: 170px;
+      transition: min-height 0.5s;
+    }
+    .room-cell {
+      background: #1e1e22;
+      border-radius: 13px 13px 18px 18px;
+      box-shadow: 0 0 0 2px #fff2, 0 2px 12px #fff2;
+      border: 1.2px solid #24262e;
+      min-width: 54px; min-height: 72px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end;
+      padding: 7px 4px 13px 4px;
+      position: relative;
+      overflow: visible;
+      transition: box-shadow .18s, border-color .11s, background .5s;
+      cursor: pointer;
+      will-change: filter, transform;
+    }
+    .room-number {
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      font-weight: 700;
+      font-size: 1.10em;
+      color: #fff;
+      letter-spacing: .03em;
+      opacity: .91;
+      margin-bottom: 7px;
+      user-select: none;
+      text-shadow: 0 1px 9px #fff2;
+      filter: blur(.01px);
+    }
+    .guest, .soul, .supernova, .new-guest {
+      width: 26px; height: 36px;
+      background: linear-gradient(180deg, #fff 60%, #eee 100%);
+      border-radius: 40% 40% 60% 60%/60% 70% 80% 80%;
+      box-shadow: 0 0 14px #fff9, 0 0 7px #fff4;
+      margin-bottom: 2px;
+      position: relative;
+      filter: blur(.01px) brightness(1.09);
+      opacity: 1;
+      z-index: 5;
+      will-change: transform, filter;
+      transition: box-shadow .5s, filter .2s, background .5s;
+    }
+    .guest-animate {
+      animation: soulPopIn 0.6s cubic-bezier(.28,.8,.5,1.4);
+      box-shadow: 0 0 38px 10px #fff, 0 0 11px #fff;
+      filter: blur(0) brightness(1.23) drop-shadow(0 2px 18px #fff);
+    }
+    @keyframes soulPopIn {
+      0% { transform: scale(0.4) translateY(-50px); opacity: 0.18;}
+      70% { transform: scale(1.2) translateY(4px); opacity: 1;}
+      100%{ transform: scale(1) translateY(0); opacity: 1;}
+    }
+    .guest-label {
+      font-size: 0.94em;
+      color: #fff;
+      font-weight: 500;
+      margin-top: 2px;
+      letter-spacing: .04em;
+      text-align: center;
+      opacity: .83;
+      font-style: italic;
+      user-select: none;
+      filter: blur(.01px);
+    }
+    .supernova-explosion {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 52% 53%, #fff 25%, #eaeaea 80%, #000 100%);
+      box-shadow: 0 0 110px 40px #fff2;
+      margin-bottom: 1em;
+      animation: supernovaExplode 1s cubic-bezier(.6,0,.8,1) forwards;
+      opacity: 0.99;
+      position: relative;
+    }
+    @keyframes supernovaExplode {
+      0% { transform: scale(0.2); opacity:0.1;}
+      80% { transform: scale(1.1); opacity:1;}
+      100%{ transform: scale(1); opacity:0.7;}
+    }
+    .supernova-desc {
+      color: #fff;
+      font-size: 1.08em;
+      font-weight: 600;
+      letter-spacing: .04em;
+      margin-bottom: 0.2em;
+      text-shadow: 0 1px 9px #fff2;
+      font-family: inherit;
+      opacity: .84;
+    }
+    .supernova-stream {
+      display: flex;
+      flex-direction: row;
+      gap: 2vw;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100vw;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 2;
+    }
+    .supernova-soul {
+      width: 15px; height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #fff 80%, #eee 100%);
+      box-shadow: 0 0 14px #fff9, 0 0 6px #fff4;
+      opacity: 0.8;
+      animation: streamFly 1.2s cubic-bezier(.18,.68,.42,1.1) forwards;
+      margin-bottom: 0.5em;
+    }
+    @keyframes streamFly {
+      0% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+      50% { opacity:1;}
+      100%{ transform: translateY(0) scale(1); opacity:0.8;}
+    }
+    /* Uncountable Soul Glitch Theme */
+    .glitch-bg {
+      position: fixed;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      background: #fff;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .8s;
+      display: flex; justify-content: center; align-items: center;
+      flex-direction: column;
+    }
+    .glitch-bg.active {
+      opacity: 1;
+      pointer-events: all;
+      animation: fadeIn 0.5s both;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .glitch-warning {
+      color: #141414;
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      font-size: 2.0em;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: .01em;
+      text-shadow: 0 0 8px #fff, 0 2px 12px #fff;
+      padding: 1.1em 2em 1em 2em;
+      background: linear-gradient(120deg,#fff 60%,#f4f4f4 100%);
+      border: 2.5px solid #eaeaea;
+      border-radius: 28px;
+      box-shadow: 0 0 40px #fff2, 0 2px 60px #eee1, 0 0 120px #fff5;
+      position: relative;
+      z-index: 1001;
+      max-width: 96vw;
+      text-align: center;
+      margin-bottom: 2.2em;
+      animation: flickerWarning 0.16s infinite alternate;
+    }
+    @keyframes flickerWarning {
+      0% { text-shadow: 0 0 8px #fff, 0 2px 12px #eaeaea; }
+      100% { text-shadow: 0 0 20px #fff, 0 1px 22px #eaeaea; }
+    }
+    .glitch-chaos {
+      color: #141414;
+      font-size: 1.22em;
+      margin-top: 1.5em;
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      opacity: .91;
+      text-align: center;
+      background: transparent;
+      letter-spacing: .045em;
+      min-height: 2.2em;
+      font-weight: 700;
+    }
+    .glitch-fadeout {
+      position: fixed;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      background: #fff;
+      z-index: 1999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 2s;
+      display: flex; justify-content: center; align-items: center;
+      color: #141414;
+      font-size: 2.3em;
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      text-align: center;
+      flex-direction: column;
+    }
+    .glitch-fadeout.active {
+      opacity: 1;
+      pointer-events: all;
+      transition: opacity 2.2s;
+      animation: fadeIn 1.1s both;
+    }
+    .chaos-shake {
+      animation: chaosShake 0.11s infinite;
+    }
+    @keyframes chaosShake {
+      0% { transform: translate(0, 0) rotate(0deg);}
+      20% { transform: translate(-2px, 1px) rotate(-1.1deg);}
+      40% { transform: translate(3px, -1px) rotate(1.2deg);}
+      60% { transform: translate(-1.2px, 3px) rotate(-0.5deg);}
+      80% { transform: translate(1.5px, -2.5px) rotate(0.7deg);}
+      100% { transform: translate(0, 0) rotate(0deg);}
+    }
+    .chaos-flicker {
+      animation: chaosFlicker 0.16s infinite alternate;
+      filter: contrast(1.13) brightness(1.04);
+    }
+    @keyframes chaosFlicker {
+      0% { filter: blur(0.09px) brightness(1.10);}
+      100% { filter: blur(1.2px) brightness(1.13);}
+    }
+    .chaos-overflow {
+      font-size: 1.06em !important;
+      color: #222 !important;
+      text-shadow: 0 0 5px #fff, 0 2px 9px #eee;
+      animation: chaosOverflow 0.21s infinite alternate;
+      font-weight: 700;
+    }
+    @keyframes chaosOverflow {
+      0% { color: #000; }
+      100% { color: #444; }
+    }
+    .uncountable-symbol {
+      display: block;
+      margin: 0 auto 1.1em auto;
+      width: 92px;
+      height: 92px;
+      background: radial-gradient(circle at 55% 40%, #fff 60%, #eee 85%, #000 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 80px 22px #fff3, 0 0 52px #fff1, 0 0 120px #fff5;
+      position: relative;
+      z-index: 2;
+      opacity: 0.93;
+      animation: fadeIn 1.7s;
+    }
+    .uncountable-symbol:after {
+      content: "ℝ";
+      display: block;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -55%);
+      font-size: 2.6em;
+      color: #000;
+      font-family: 'SF Pro Display', 'Inter', Arial, sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      opacity: 0.67;
+      text-shadow: 0 2px 18px #fffbe7ee;
+      filter: blur(0.5px);
+    }
+    @media (max-width: 800px) {
+      .rooms-grid { grid-template-columns: repeat(auto-fit, minmax(38px, 1fr)); gap: 8px; }
+      .container { padding: 0 2px;}
+      .glass { padding: 1.1em 0.3em 1.2em 0.3em; min-width: 0; }
+      .room-cell { min-width: 27px; min-height: 40px;}
+      .room-number { font-size: 0.91em;}
+      .glitch-warning { font-size: 1.05em; padding: 0.7em 0.2em 0.7em 0.2em;}
+      .glitch-fadeout { font-size: 1em; }
+      .supernova-explosion { width: 34vw; height: 34vw; min-width: 40px; min-height: 40px;}
+      .supernova-desc { font-size: .91em; padding: 6px 10px; }
+      .supernova-stream { gap: 0.3vw; }
+      .supernova-container { min-height: 80px; }
+      .uncountable-symbol { width: 42px; height: 42px; }
+      .uncountable-symbol:after { font-size: 1.2em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blackhole-bg" aria-hidden="true">
+    <div class="blackhole-glow"></div>
+    <div class="blackhole-ring"></div>
+    <div class="blackhole-center"></div>
+  </div>
+  <canvas class="cosmic-bg" id="cosmicBG"></canvas>
+  <div id="glitchBG" class="glitch-bg">
+    <span class="uncountable-symbol"></span>
+    <div class="glitch-warning" id="glitchWarning">
+      <span style="font-size:1.4em;letter-spacing:.06em;opacity:.93;">Uncountable Infinity Detected</span><br>
+      <span style="font-size:1.12em;opacity:.80;">A Real Number Soul (e.g. 0.314159...) has arrived.<br>It cannot be indexed by any natural number.<br><span style="color:#181a2c;font-size:0.9em;">(Mathematically proven: |ℝ| &gt; |ℕ|)</span></span>
+    </div>
+    <div class="glitch-chaos" id="glitchChaos" style="margin-top:1.2em"></div>
+  </div>
+  <div id="glitchFadeout" class="glitch-fadeout"></div>
+  <div class="container" id="containerMain">
+    <header>
+      <div class="title">Heaven’s Hotel</div>
+      <div class="subtitle">Hilbert’s Paradox — <span style="color:#fff">n+1 · Supernova · ℝ</span></div>
+      <div class="level-tabs">
+        <button class="level-tab active" id="tab-nplus1">Level 1: n+1</button>
+        <button class="level-tab" id="tab-supernova">Level 2: Supernova Surge</button>
+        <button class="level-tab" id="tab-uncountable">Level ∞: Uncountable Soul</button>
+      </div>
+      <div class="story" id="story">
+        A never-ending line of souls approaches Heaven’s Hotel.<br>
+        Every room is full, but infinity is always welcoming...
+      </div>
+    </header>
+    <div id="supernovaContainer" class="supernova-container" style="display:none;">
+      <div class="supernova-explosion"></div>
+      <div class="supernova-desc">A universe explodes.<br>∞ souls rush toward Heaven!</div>
+      <div class="supernova-stream"></div>
+    </div>
+    <div class="controls" id="controls">
+      <button class="btn" id="btnPlay">Add Soul</button>
+      <button class="btn" id="btnReset">Reset</button>
+    </div>
+    <div class="glass" id="levelGlass">
+      <div class="rooms-grid" id="roomsGrid"></div>
+      <div class="story" id="resultMsg" style="margin-top:0.8em;color:#222;opacity:0;"></div>
+    </div>
+  </div>
+  <script>
+    // --- Cosmic Background (Canvas) ---
+    const cosmic = document.getElementById('cosmicBG');
+    let W = window.innerWidth, H = window.innerHeight;
+    function resizeCosmic() { W = window.innerWidth; H = window.innerHeight; cosmic.width = W; cosmic.height = H; }
+    window.addEventListener('resize', resizeCosmic); resizeCosmic();
+    let Cparticles = [];
+    function cosmicParticles() {
+      Cparticles = [];
+      for (let i = 0; i < 100; i++) {
+        Cparticles.push({
+          x: Math.random()*W, y: Math.random()*H,
+          r: Math.random()*1.7+0.4,
+          a: Math.random()*2*Math.PI,
+          speed: Math.random()*0.05+0.01,
+          type: Math.random() < 0.85 ? 'star' : 'feather'
+        });
+      }
+    }
+    cosmicParticles();
+    window.addEventListener('resize', cosmicParticles);
+    function drawCosmic() {
+      const ctx = cosmic.getContext('2d');
+      ctx.clearRect(0,0,W,H);
+      let cx = W/2, cy = H/2;
+      let t = Date.now()/1000;
+      let grad = ctx.createRadialGradient(cx, cy, 8, cx, cy, Math.min(W,H)*.26);
+      grad.addColorStop(0, "#fff");
+      grad.addColorStop(0.12, "#eaeaea");
+      grad.addColorStop(0.23, "#eaeaea");
+      grad.addColorStop(0.40, "#181a1e");
+      grad.addColorStop(1, "#0d052400");
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.beginPath(); ctx.arc(cx, cy, Math.min(W,H)*.33, 0, 2*Math.PI);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.restore();
+      for (let p of Cparticles) {
+        ctx.save();
+        if (p.type === "star") {
+          ctx.globalAlpha = 0.09 + 0.11 * Math.abs(Math.cos(t + p.a));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, 2*Math.PI);
+          ctx.fillStyle="#fff";
+          ctx.shadowColor="#fff";
+          ctx.shadowBlur=5+Math.random()*2;
+          ctx.fill();
+        } else {
+          ctx.globalAlpha = 0.02 + 0.09 * Math.abs(Math.cos(t + p.a));
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.r*2, p.r, p.a, 0, 2*Math.PI);
+          ctx.fillStyle = "#fff";
+          ctx.shadowColor="#fff";
+          ctx.shadowBlur=7;
+          ctx.fill();
+        }
+        ctx.restore();
+        p.x += Math.cos(p.a)*p.speed;
+        p.y += Math.sin(p.a)*p.speed+0.01;
+        if (p.x<0) p.x=W;
+        if (p.x>W) p.x=0;
+        if (p.y<0) p.y=H;
+        if (p.y>H) p.y=0;
+      }
+      requestAnimationFrame(drawCosmic);
+    }
+    drawCosmic();
+
+    // --- Game Logic: n+1, supernova, uncountable glitch ---
+    const N_ROOMS = 30;
+    const roomsGrid = document.getElementById('roomsGrid');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnReset = document.getElementById('btnReset');
+    const controlsDiv = document.getElementById('controls');
+    const story = document.getElementById('story');
+    const resultMsg = document.getElementById('resultMsg');
+    const tabNplus1 = document.getElementById('tab-nplus1');
+    const tabSupernova = document.getElementById('tab-supernova');
+    const tabUncountable = document.getElementById('tab-uncountable');
+    const levelGlass = document.getElementById('levelGlass');
+    const supernovaContainer = document.getElementById('supernovaContainer');
+    const supernovaStream = document.querySelector('.supernova-stream');
+    const glitchBG = document.getElementById('glitchBG');
+    const glitchWarning = document.getElementById('glitchWarning');
+    const glitchFadeout = document.getElementById('glitchFadeout');
+    const glitchChaos = document.getElementById('glitchChaos');
+    const containerMain = document.getElementById('containerMain');
+    let currentLevel = 'nplus1';
+
+    // n+1 state
+    let state_nplus1 = { guests: [], phase: 'start', animating: false };
+    // Supernova state
+    let state_supernova = { guests: [], newSouls: [], phase: 'start', animating: false };
+    // Uncountable glitch state
+    let glitchTimer = null;
+
+    function resetGame(level) {
+      if (!level) level = currentLevel;
+      if (level === 'nplus1') {
+        state_nplus1.guests = [];
+        state_nplus1.phase = 'start';
+        state_nplus1.animating = false;
+        for(let i=0;i<N_ROOMS;i++) state_nplus1.guests.push({name: `Soul ${i+1}`, room: i+1});
+        roomsGrid.innerHTML = '';
+        story.innerHTML = `A never-ending line of souls approaches Heaven’s Hotel.<br>
+        Every room is full, but infinity is always welcoming...`;
+        resultMsg.style.opacity = 0;
+        levelGlass.style.display = "";
+        supernovaContainer.style.display = "none";
+        controlsDiv.style.display = "";
+        containerMain.style.filter = "";
+        renderRooms_nplus1();
+        stopGlitch();
+      }
+      if (level === 'supernova') {
+        state_supernova.guests = [];
+        state_supernova.newSouls = [];
+        state_supernova.phase = 'start';
+        state_supernova.animating = false;
+        for(let i=0;i<N_ROOMS;i++) state_supernova.guests.push({name: `Soul ${i+1}`, room: i+1});
+        roomsGrid.innerHTML = '';
+        story.innerHTML = `<span style="color:#fff">A universe explodes!</span><br>
+        ∞ souls rush to Heaven’s Hotel. <br>Can you make space for the surge?`;
+        resultMsg.style.opacity = 0;
+        levelGlass.style.display = "";
+        supernovaContainer.style.display = "";
+        controlsDiv.style.display = "";
+        containerMain.style.filter = "";
+        renderRooms_supernova();
+        stopGlitch();
+        showSupernovaAnimation();
+      }
+      if (level === 'uncountable') {
+        levelGlass.style.display = "";
+        controlsDiv.style.display = "";
+        supernovaContainer.style.display = "none";
+        glitchBG.classList.remove('active'); glitchFadeout.classList.remove('active');
+        containerMain.style.filter = "";
+        story.innerHTML = "A mysterious Real Number Soul, e.g. <b>0.314159...</b>, has arrived.<br>Not all infinities are equal.<br><span style='color:#222'>Try to fit it in the hotel.</span>";
+        resultMsg.style.opacity = 0;
+        renderRoomsUncountablePre();
+        stopGlitch();
+      }
+    }
+
+    // --- n+1: now with soul pop-in animation ---
+    function renderRooms_nplus1(animPhase) {
+      roomsGrid.innerHTML = '';
+      for(let i=0;i<N_ROOMS;i++) {
+        let roomNum = i+1;
+        let guest = state_nplus1.guests.find(g => g.room === roomNum);
+        let cell = document.createElement('div');
+        cell.className = 'room-cell';
+        cell.innerHTML = `<div class="room-number">${roomNum}</div>`;
+        if (guest) {
+          let div = document.createElement('div');
+          div.className = 'guest';
+          // Animate soul that is "new" (room 1) or all souls shifting in
+          if(animPhase==='move' && roomNum === 1) div.classList.add('guest-animate');
+          if(animPhase==='move' && roomNum !== 1) div.classList.add('guest-animate');
+          cell.appendChild(div);
+          let label = document.createElement('div');
+          label.className = 'guest-label';
+          label.textContent = guest.name;
+          cell.appendChild(label);
+        }
+        roomsGrid.appendChild(cell);
+      }
+    }
+    function animateNplus1() {
+      if(state_nplus1.phase!=='start' || state_nplus1.animating) return;
+      state_nplus1.phase = 'animating';
+      state_nplus1.animating = true;
+      story.innerHTML = "<b>Watch:</b> all souls shift forward one room.<br><span style='color:#fff'>Room 1 is now open for the new soul.</span>";
+      // animate out then in for full effect
+      // step 1: fade out
+      let cells = roomsGrid.querySelectorAll('.room-cell');
+      cells.forEach((cell, i) => {
+        setTimeout(()=> {
+          cell.style.opacity = 0.5;
+          cell.style.filter = "blur(3px)";
+        }, i*12);
+      });
+      setTimeout(()=>{
+        // step 2: re-render with pop
+        let newGuests = [{name: "New Soul", room: 1}];
+        for(let i=0;i<N_ROOMS-1;i++) {
+          newGuests.push({...state_nplus1.guests[i], room: i+2});
+        }
+        state_nplus1.guests = newGuests;
+        renderRooms_nplus1('move');
+        let newcells = roomsGrid.querySelectorAll('.guest');
+        newcells.forEach((el, i) => {
+          setTimeout(()=>{ el.classList.add('guest-animate'); }, i*18);
+        });
+        // fade in
+        let all = roomsGrid.querySelectorAll('.room-cell');
+        all.forEach((cell, i) => {
+          setTimeout(()=> {
+            cell.style.opacity = 1;
+            cell.style.filter = "blur(0px)";
+          }, i*14+180);
+        });
+      }, 230);
+      setTimeout(()=>{
+        state_nplus1.phase = 'done';
+        state_nplus1.animating = false;
+        story.innerHTML = "<span style='color:#fff'>The infinity of Heaven: always room for one more.</span>";
+        renderRooms_nplus1();
+        resultMsg.innerHTML = "Poetic: <b>Infinity is never full</b> — every new soul finds a place.";
+        resultMsg.style.opacity = 1;
+      }, 1450);
+    }
+
+    // --- Supernova Surge: also with pop-in animation for new guests ---
+    function renderRooms_supernova(animPhase) {
+      roomsGrid.innerHTML = '';
+      for(let i=0;i<N_ROOMS;i++) {
+        let roomNum = i+1;
+        let guest = state_supernova.guests.find(g => g.room === roomNum);
+        let newSoul = state_supernova.newSouls.find(ns => ns.room === roomNum);
+        let freed = state_supernova.phase !== 'start' && roomNum%2===1 && !guest;
+        let cell = document.createElement('div');
+        cell.className = 'room-cell';
+        cell.innerHTML = `<div class="room-number">${roomNum}</div>`;
+        if (guest) {
+          let div = document.createElement('div');
+          div.className = 'guest';
+          // Animate all guests shifting to 2n
+          if(animPhase==='move') div.classList.add('guest-animate');
+          cell.appendChild(div);
+          let label = document.createElement('div');
+          label.className = 'guest-label';
+          label.textContent = guest.name;
+          cell.appendChild(label);
+        }
+        if (newSoul) {
+          let div = document.createElement('div');
+          div.className = 'guest new-guest guest-animate';
+          cell.appendChild(div);
+          let label = document.createElement('div');
+          label.className = 'guest-label';
+          label.textContent = newSoul.name;
+          cell.appendChild(label);
+        }
+        roomsGrid.appendChild(cell);
+      }
+    }
+    function showSupernovaAnimation() {
+      supernovaContainer.style.display = "";
+      supernovaStream.innerHTML = "";
+      setTimeout(()=>{
+        for(let i=0;i<7;i++) {
+          let soul = document.createElement('div');
+          soul.className = 'supernova-soul';
+          soul.style.animationDelay = (0.1*i+0.23)+'s';
+          supernovaStream.appendChild(soul);
+        }
+      }, 550);
+      setTimeout(()=>{ supernovaStream.innerHTML = ""; }, 2100);
+    }
+    function animateSupernova() {
+      if(state_supernova.phase!=='start' || state_supernova.animating) return;
+      state_supernova.phase = 'animating';
+      state_supernova.animating = true;
+      story.innerHTML = "<b>Supernova Surge:</b> Slide current guests to even rooms; new souls fill the odd rooms!";
+      // Animate guests to 2n
+      let cells = roomsGrid.querySelectorAll('.room-cell');
+      cells.forEach((cell, i) => {
+        setTimeout(()=> {
+          cell.style.opacity = 0.45;
+          cell.style.filter = "blur(2.5px)";
+        }, i*11);
+      });
+      setTimeout(()=>{
+        for(let i=0;i<N_ROOMS;i++) {
+          state_supernova.guests[i].room = (state_supernova.guests[i].room)*2;
+        }
+        renderRooms_supernova('move');
+        let newcells = roomsGrid.querySelectorAll('.guest');
+        newcells.forEach((el, i) => {
+          setTimeout(()=>{ el.classList.add('guest-animate'); }, i*14);
+        });
+        let all = roomsGrid.querySelectorAll('.room-cell');
+        all.forEach((cell, i) => {
+          setTimeout(()=> {
+            cell.style.opacity = 1;
+            cell.style.filter = "blur(0px)";
+          }, i*12+160);
+        });
+      }, 220);
+      setTimeout(()=>{
+        // Animate new souls in odd rooms
+        state_supernova.newSouls = [];
+        for(let i=1;i<=N_ROOMS;i+=2) {
+          state_supernova.newSouls.push({name: "New Soul", room: i});
+        }
+        state_supernova.phase = 'done';
+        renderRooms_supernova('add');
+        let newcells = roomsGrid.querySelectorAll('.new-guest');
+        newcells.forEach((el, i) => {
+          setTimeout(()=>{ el.classList.add('guest-animate'); }, i*20);
+        });
+        story.innerHTML = "<span style='color:#fff'>The infinity of Heaven: All souls, old and new, now have rooms.</span>";
+        setTimeout(()=>{
+          resultMsg.innerHTML = "Supernova Paradox: <b>Every new soul finds a room</b> — infinity is never overwhelmed!";
+          resultMsg.style.opacity = 1;
+          state_supernova.animating = false;
+        }, 880);
+      }, 1100);
+    }
+
+    // --- Uncountable Soul Glitch Logic ---
+    function renderRoomsUncountablePre() {
+      roomsGrid.innerHTML = '';
+      for(let i=0;i<N_ROOMS;i++) {
+        let roomNum = i+1;
+        let cell = document.createElement('div');
+        cell.className = 'room-cell';
+        cell.innerHTML = `<div class="room-number">${roomNum}</div>
+          <div class="guest"></div>
+          <div class="guest-label">Soul ${roomNum}</div>`;
+        roomsGrid.appendChild(cell);
+      }
+      setTimeout(()=>activateUncountableGlitch(), 1200);
+    }
+    function activateUncountableGlitch() {
+      if (glitchTimer) clearInterval(glitchTimer);
+      containerMain.classList.add('chaos-shake');
+      roomsGrid.classList.add('chaos-flicker');
+      glitchBG.classList.add('active');
+      glitchWarning.innerHTML = `
+        <span style="font-size:1.6em;font-weight:700;">Uncountable Soul: ℝ</span><br>
+        <span style="font-size:1.11em;opacity:.87;">A real number soul (e.g. 0.314159...) has arrived.<br>It cannot be indexed by any natural number.<br>
+        <span style="color:#181a2c;font-size:0.88em;">Mathematically proven: |ℝ| &gt; |ℕ|</span></span>
+      `;
+      animateRoomChaos();
+      let chaosCount = 0;
+      glitchTimer = setInterval(() => {
+        chaosCount++;
+        animateRoomChaos();
+        if (chaosCount > 18) {
+          clearInterval(glitchTimer);
+          setTimeout(() => {
+            glitchBG.classList.remove('active');
+            fadeOutGlitch();
+          }, 1000);
+        }
+      }, 130);
+    }
+    function animateRoomChaos() {
+      let nums = [];
+      for(let i=0;i<N_ROOMS;i++) {
+        let real = Math.random();
+        let rnd = real.toFixed(8).replace(/0\.$/, "0");
+        nums.push(`<span class="chaos-overflow">${rnd}</span>`);
+      }
+      glitchChaos.innerHTML = nums.join(" ");
+      roomsGrid.querySelectorAll('.room-cell').forEach((cell, i) => {
+        let n = Math.random();
+        let nstr = n.toFixed(8);
+        cell.classList.add('chaos-flicker');
+        let numDiv = cell.querySelector('.room-number');
+        numDiv.innerHTML = nstr;
+        numDiv.style.color = ["#222", "#444", "#222", "#000"][i%4];
+        cell.style.transform = `scale(${1+Math.random()*0.10}) rotate(${(Math.random()-0.5)*11}deg)`;
+      });
+    }
+    function fadeOutGlitch() {
+      glitchFadeout.innerHTML = `
+        <span class="uncountable-symbol"></span>
+        <div style="margin-bottom:1.1em;"><span style="font-size:2em;opacity:0.93;font-weight:700;">Uncountable Infinity</span></div>
+        <div style="font-size:1.11em;opacity:.98;margin-bottom:1.1em;line-height:1.6;">
+        <b>Mathematical Reason:</b><br>
+        The set of real numbers (ℝ) is uncountably infinite.<br>
+        There is no bijection between ℕ and ℝ.<br>
+        <span style="color:#444">By Cantor’s diagonal argument, any attempt to list all real numbers will always miss some.</span>
+        </div>
+        <div style="margin-bottom:0.6em;font-size:1.02em;opacity:.75;">
+        <i>Some infinities are truly greater.<br>
+        Hilbert’s Hotel cannot contain the continuum.</i>
+        </div>
+        <div style="font-size:0.97em;opacity:.29;margin-top:1.4em;">(Reload to restart infinity)</div>
+      `;
+      glitchFadeout.classList.add('active');
+      containerMain.style.filter = "brightness(0.12) blur(10px)";
+    }
+    function stopGlitch() {
+      containerMain.classList.remove('chaos-shake');
+      roomsGrid.classList.remove('chaos-flicker');
+      glitchBG.classList.remove('active');
+      glitchFadeout.classList.remove('active');
+      if (glitchTimer) clearInterval(glitchTimer);
+      roomsGrid.querySelectorAll('.room-cell').forEach((cell, i) => {
+        let numDiv = cell.querySelector('.room-number');
+        if (numDiv) numDiv.innerHTML = (i+1);
+        cell.style.transform = '';
+        numDiv && (numDiv.style.color = "#fff");
+        cell.classList.remove('chaos-flicker');
+      });
+      glitchChaos.innerHTML = '';
+      containerMain.style.filter = "";
+    }
+
+    // --- UI Events & Tab handling ---
+    function setLevel(level) {
+      currentLevel = level;
+      tabNplus1.classList.remove('active');
+      tabSupernova.classList.remove('active');
+      tabUncountable.classList.remove('active');
+      if (level === 'nplus1') {
+        tabNplus1.classList.add('active');
+        btnPlay.textContent = "Add Soul";
+        btnPlay.style.display = "";
+        resetGame('nplus1');
+      }
+      else if (level === 'supernova') {
+        tabSupernova.classList.add('active');
+        btnPlay.textContent = "Supernova Surge!";
+        btnPlay.style.display = "";
+        resetGame('supernova');
+      }
+      else if (level === 'uncountable') {
+        tabUncountable.classList.add('active');
+        btnPlay.style.display = "none";
+        resetGame('uncountable');
+      }
+      resultMsg.style.opacity = 0;
+    }
+    tabNplus1.onclick = ()=> setLevel('nplus1');
+    tabSupernova.onclick = ()=> setLevel('supernova');
+    tabUncountable.onclick = ()=> setLevel('uncountable');
+    btnPlay.onclick = ()=>{
+      if (currentLevel === 'nplus1') animateNplus1();
+      if (currentLevel === 'supernova') animateSupernova();
+    };
+    btnReset.onclick = ()=> setLevel(currentLevel);
+    setLevel('nplus1');
+  </script>
+</body>
+</html>
